@@ -1,0 +1,96 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+class Parser {
+    string s;
+    size_t i = 0;
+
+public:
+    Parser(const string &str) : s(str) {}
+
+    double parseExpression() {
+        double val = parseTerm();
+        while (true) {
+            char op = peek();
+            if (op == '+' || op == '-') {
+                ++i;
+                double rhs = parseTerm();
+                val = (op == '+') ? val + rhs : val - rhs;
+            } else break;
+        }
+        return val;
+    }
+
+    double parseTerm() {
+        double val = parseFactor();
+        while (true) {
+            char op = peek();
+            if (op == '*' || op == '/') {
+                ++i;
+                double rhs = parseFactor();
+                val = (op == '*') ? val * rhs : val / rhs;
+            } else break;
+        }
+        return val;
+    }
+
+    double parseFactor() {
+        char op = peek();
+        if (op == '+' || op == '-') {
+            ++i;
+            double f = parseFactor();
+            return (op == '-') ? -f : f;
+        }
+        if (op == '(') {
+            ++i;
+            double val = parseExpression();
+            if (peek() != ')')
+                throw runtime_error("Missing closing )");
+            ++i;
+            return val;
+        }
+        return parseNumber();
+    }
+
+    double parseNumber() {
+        skipWhitespace();
+        size_t j = i;
+        bool dot = false;
+        while (j < s.size() && (isdigit(s[j]) || (!dot && s[j] == '.'))) {
+            if (s[j] == '.') dot = true;
+            ++j;
+        }
+        if (j == i)
+            throw runtime_error("Number expected at pos " + to_string(i));
+        double val = stod(s.substr(i, j - i));
+        i = j;
+        return val;
+    }
+
+    char peek() {
+        skipWhitespace();
+        return (i < s.size()) ? s[i] : '\0';
+    }
+
+    void skipWhitespace() {
+        while (i < s.size() && isspace(s[i])) ++i;
+    }
+};
+
+int main(){
+    cout << "Enter expression, or Ctrl+D to quit:\n";
+    string line;
+    while (getline(cin, line)) {
+        if (line.empty()) continue;
+        try {
+            Parser p(line);
+            double result = p.parseExpression();
+            if (p.peek() != '\0')
+                throw runtime_error("Unexpected char at pos " + to_string(p.i));
+            cout << "= " << result << "\n";
+        } catch (exception &e) {
+            cout << "Error: " << e.what() << "\n";
+        }
+    }
+    return 0;
+}
